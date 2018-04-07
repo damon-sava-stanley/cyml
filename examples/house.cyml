@@ -1,0 +1,70 @@
+<# This simple example indicates the general features of CYML.
+
+This block, because it starts with a '#' character, is a comment and will not
+appear in the output.>
+
+<# These three blocks declare variables. A block starting with '!' is a
+code block, which, when rendered, can run arbitrary Javascript code and will
+not return any output. Code blocks containing a single statement of the form
+"var := expr" are, however, treated specially. They declare a static variable
+whose default value is given by "expr" that may be modified further downstream.
+It is reasonable to try to minimize the number of top-level or global variables
+to a few that control where in the game the player is and features of the
+player character, here `room` and `gameOver` and `inventory`.>
+<!room := "entrance">
+<!gameOver := false>
+<!inventory := []>
+
+<NB# This is a switch statement. The value of the expression, `gameOver` here,
+will be evaluated and the case statement whose value matches that of the
+expression will be rendered. The content of the switch that will be evaluated,
+and this holds in general, are what is between the '|' and the closing '>'. 
+
+Note that this comment starts with 'NB#' which will allow us to close it with
+'NB' rather than '>'. This allows us to include '>' inside. This may be done
+with every block and any string (not just 'NB'). This is useful, e.g. in writing
+code which uses greater-thans. NB> 
+<?gameOver|
+  <# This is a case statement. In this case, the block will be rendered when
+  `gameOver === true`.>
+  <:true|
+    <# Here we have our first text. When this block is rendered, this text
+       will be added.>
+    You leave the house, your mind blank and the photograph in your pocket.>
+  <:false|
+    <?room|
+      <:"entrance"|
+        <# You can declare variables within the scope of another block.
+        These variables are static, i.e. their value persists even when the 
+        block declaring them is re-rendered. However, the cannot be accessed 
+        from another block. This is useful in keeping the namespace clean>
+        <!keyInEntrance := true>
+        You enter the house. 
+
+        <# A '?:' block is an if-then block that renders its contents if the
+        given expression, here `keyInEntrance` evaluates to `true`.>
+        <?: keyInEntrance|
+          <NB# This '<i|key>' is inline HTML and is short for '<i>key</i>' NB>
+          A <i|key> is on the sidetable. 
+          <@ inventory.add("key"); keyInEntrance = false|Take the key.>>
+
+        <@ room="dining"|Move to the dining room.>>
+        
+        <?: inventory.includes("photograph")|
+          <@ gameOver=true|Leave.>>>
+      <:"dining"|
+        <!safeOpen := false>
+        The dining room is large and empty. A safe is on the table.
+
+        <?safeOpen|
+          <!photographInSafe := true>
+          <:true|The safe is open.
+            <?photographInSafe|
+              <:true|You see a photograph in the open safe.
+                <@ inventory.add("photograph"); photographInSafe=false|
+                  Take it.>>
+              <:false|The safe is empty>>
+          <:false|The safe is closed. A key could open it.
+            <?: inventory.includes("key")|<@ safeOpen = true|Open it.>>>
+
+        <@ room="entrance"|Return to the entrance.>>>>
